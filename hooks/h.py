@@ -54,4 +54,8 @@ def h_24(options,buildout):
     """Patch Makefile to point to our site packages."""
     opts = ' '.join(options['configure-options'].split())
     h(options, buildout, '24', opts) 
+def h_27(options,buildout):
+    """Patch Makefile to point to our site packages."""
+    opts = ' '.join(options['configure-options'].split())
+    h(options, buildout, '27', opts)  
 # vim:set ts=4 sts=4 et  :

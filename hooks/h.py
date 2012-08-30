@@ -3,7 +3,20 @@ import re
 import shutil
 import subprocess
 import sys
-from minitage.core.common import which
+from distutils.sysconfig import get_python_lib
+
+
+def which(program, environ=None, key = 'PATH', split = ':'):
+    if not environ:
+        environ = os.environ
+    PATH=environ.get(key, '').split(split)
+    for entry in PATH:
+        fp = os.path.abspath(os.path.join(entry, program))
+        if os.path.exists(fp):
+            return fp
+        if (sys.platform.startswith('win') or sys.platform.startswith('cyg'))  and os.path.exists(fp+'.exe'):
+            return fp+'.exe'
+    raise IOError('Program not fond: %s in %s ' % (program, PATH)) 
 
 
 def get_qmake():
@@ -29,15 +42,27 @@ def install(options,buildout):
                 os.path.join(options['location'], d))
     os.chdir(cwd)
 
-def h(options, buildout, version, opts):
+def h(options, buildout, opts):
     """Patch Makefile to point to our site packages."""
     cwd = os.getcwd()
     md = options['compile-directory']
     c = os.path.join(md, 'configure.py')
     os.chdir(md)
-    p = buildout['p'][version]
     qmake = get_qmake()
-    cmd = [p, c, opts]
+    opts = ' '.join(opts.split())
+    py = buildout['buildout']['executable']
+    if not  py.startswith('/'):
+        py = which(py)
+    includes = os.path.join(sys.prefix, 'includes')
+    lib = os.path.join(sys.prefix, 'lib')
+    sp = get_python_lib()
+    sip = os.path.join(get_python_lib(), 'sip')
+    qsci = os.path.join(get_python_lib(), 'qsci')
+    bins = os.path.join(sys.prefix, 'bin')
+    opts += " -d %s" % sp
+    opts += " -b %s" % bins
+    opts += " -n %s" % qsci
+    cmd = [py, c, opts]
     if qmake:
         cmd.extend(['-q', qmake])
     scmd = ' '.join(cmd)
@@ -46,16 +71,8 @@ def h(options, buildout, version, opts):
     if ret > 0: raise Exception,('Cannot confiure')
     os.chdir(cwd)
 
-def h_26(options,buildout):
-    """Patch Makefile to point to our site packages."""
-    opts = ' '.join(options['configure-options'].split())
-    h(options, buildout, '26', opts)
-def h_24(options,buildout):
-    """Patch Makefile to point to our site packages."""
-    opts = ' '.join(options['configure-options'].split())
-    h(options, buildout, '24', opts) 
 def h_27(options,buildout):
     """Patch Makefile to point to our site packages."""
     opts = ' '.join(options['configure-options'].split())
-    h(options, buildout, '27', opts)  
+    h(options, buildout, opts)  
 # vim:set ts=4 sts=4 et  :
